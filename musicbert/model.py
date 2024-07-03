@@ -190,29 +190,32 @@ class MusicBertFrontOri(nn.Module):
 
     def forward(self, input_ids=None, token_type_ids=None, attention_mask=None):
         input_ids = input_ids.to(self.device)
-        token_type_ids = token_type_ids.to(self.device)
-        attention_mask = attention_mask.to(self.device)
+        transformed_input = self.input_transform(input_ids)
+        if token_type_ids is not None:
+            token_type_ids = token_type_ids.to(self.device)
+        if attention_mask is not None:
+            attention_mask = attention_mask.to(self.device)
 
-        extended_attention_mask = attention_mask[:, None, None, :]
-        extended_attention_mask = (1.0 - extended_attention_mask) * -10000.0
+        extended_attention_mask = (attention_mask[:, None, None, :] if attention_mask is not None else None)
+        if extended_attention_mask is not None:
+            extended_attention_mask = (1.0 - extended_attention_mask) * -10000.0
 
         hidden_states = self.embeddings(
-            input_ids=input_ids,
+            inputs_embeds=transformed_input,
             position_ids=None,
             token_type_ids=token_type_ids,
-            inputs_embeds=None,
             past_key_values_length=0,
         )
 
-        for layer in self.encoder:
-            layer_output = layer(hidden_states, extended_attention_mask)
-            hidden_states = layer_output[0]
+        for i, layer in enumerate(self.encoder):
+            layer_outputs = layer(hidden_states, attention_mask=extended_attention_mask)
+            hidden_states = layer_outputs[0]
+            print(f"Post layer {i}: {hidden_states.shape}")
 
         return hidden_states.cpu()
 
     def parameter_rrefs(self):
         return [RRef(p) for p in self.parameters()]
-
 
 class MusicBertBackOri(nn.Module):
     def __init__(self, pretrain_dir, split_num, rank, label_nums, device):
