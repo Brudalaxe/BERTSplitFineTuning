@@ -12,8 +12,8 @@ import sys
 
 # system settings
 os.environ['MASTER_ADDR'] = 'localhost'
-# os.environ['MASTER_ADDR'] = '192.168.133.14'
-os.environ['MASTER_PORT'] = '12355'
+# os.environ['MASTER_ADDR'] = '127.0.0.1'
+os.environ['MASTER_PORT'] = '29500'
 root = os.path.dirname(__file__)
 sys.path.append(root)
 
